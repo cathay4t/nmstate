@@ -40,16 +40,23 @@ class NmProfiles:
     def __init__(self, context):
         self._ctx = context
 
+    def generate_config_strings(self, net_state):
+        _append_nm_ovs_port_iface(net_state)
+        return [
+            NmProfile(self._ctx, iface).to_key_file_string()
+            for iface in net_state.ifaces.all_ifaces()
+        ]
+
     def apply_config(self, net_state, save_to_disk):
         self._prepare_state_for_profiles(net_state)
         self._profiles = [
-            NmProfile(self._ctx, iface, save_to_disk)
+            NmProfile(self._ctx, iface)
             for iface in net_state.ifaces.all_ifaces()
             if (iface.is_changed or iface.is_desired) and not iface.is_ignore
         ]
 
         for profile in self._profiles:
-            profile.save_config()
+            profile.save_config(save_to_disk)
         self._ctx.wait_all_finish()
 
         for action in NmProfile.ACTIONS:

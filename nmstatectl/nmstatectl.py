@@ -56,6 +56,7 @@ def main():
     setup_subcommand_show(subparsers)
     setup_subcommand_version(subparsers)
     setup_subcommand_varlink(subparsers)
+    setup_subcommand_gen_config(subparsers)
     parser.add_argument(
         "--version", action="store_true", help="Display nmstate version"
     )
@@ -199,6 +200,16 @@ def setup_subcommand_varlink(subparsers):
     parser_varlink.set_defaults(func=run_varlink_server)
 
 
+def setup_subcommand_gen_config(subparsers):
+    parser_gc = subparsers.add_parser("gc", help="Generate configurations")
+    parser_gc.add_argument(
+        "file",
+        help="File containing desired state. ",
+        nargs="*",
+    )
+    parser_gc.set_defaults(func=run_gen_config)
+
+
 def version(args):
     print(libnmstate.__version__)
 
@@ -290,6 +301,17 @@ def run_varlink_server(args):
     except Exception as exception:
         logging.exception(exception)
 
+
+def run_gen_config(args):
+    if not args.file:
+        print("ERROR Please define a staet file")
+        exit(1)
+    for state_file in args.file:
+        with open(state_file) as fd:
+            state = yaml.load(fd.read(), Loader=yaml.SafeLoader)
+            print_state(
+                libnmstate.generate_configurations(state), use_yaml=True
+            )
 
 def apply_state(statedata, verify_change, commit, timeout, save_to_disk):
     use_yaml = False

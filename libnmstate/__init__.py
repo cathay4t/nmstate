@@ -26,7 +26,7 @@ from .netapplier import apply
 from .netapplier import commit
 from .netapplier import rollback
 from .netinfo import show
-
+from .nmstate import generate_configurations
 from .prettystate import PrettyState
 
 

@@ -37,6 +37,7 @@ from libnmstate.schema import RouteRule
 from .nispor.plugin import NisporPlugin
 from .plugin import NmstatePlugin
 from .state import merge_dict
+from .net_state import NetState
 
 
 @contextmanager
@@ -339,3 +340,20 @@ def _get_iface_types_by_name(iface_infos, name):
             iface_types.append(iface_type)
 
     return iface_types
+
+
+def generate_configurations(desire_state):
+    """
+    Return a dictionary with:
+        * key: plugin name
+        * vlaue: list of strings for configruations
+    """
+    configs = {}
+    net_state = NetState(desire_state)
+
+    with plugin_context() as plugins:
+        for plugin in plugins:
+            config = plugin.generate_configurations(net_state)
+            if config:
+                configs[plugin.name] = config
+    return configs
