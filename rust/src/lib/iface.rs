@@ -162,7 +162,7 @@ impl From<&str> for InterfaceState {
 #[derive(Debug, Clone, PartialEq, Serialize, Default)]
 #[non_exhaustive]
 pub struct UnknownInterface {
-    #[serde(skip)]
+    #[serde(skip_deserializing, flatten)]
     pub base: BaseInterface,
     #[serde(flatten)]
     other: serde_json::Value,
@@ -511,7 +511,7 @@ impl Interface {
         }
     }
 
-    // Return None if its is not controller
+    // Return None if its is not controller or not mentioned port section
     pub fn ports(&self) -> Option<Vec<&str>> {
         if self.is_absent() {
             match self {
