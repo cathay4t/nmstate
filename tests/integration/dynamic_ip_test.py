@@ -9,6 +9,7 @@ import os
 import time
 
 import pytest
+import yaml
 
 import libnmstate
 from libnmstate.schema import Constants
@@ -1644,3 +1645,61 @@ def test_desired_ipv6_token_with_autoconf_off(dhcpcli_with_ipv6_token):
                 ],
             }
         )
+
+
+@pytest.fixture
+def cleanup_ovs_bridge():
+    yield
+    libnmstate.apply(
+        yaml.load(
+            """---
+            interfaces:
+            - name: ovs0
+              type: ovs-interface
+              state: absent
+            - name: br0
+              type: ovs-bridge
+              state: absent""",
+            Loader=yaml.SafeLoader,
+        )
+    )
+
+
+def test_move_dhcp_ip_to_ovs_bridge_use_copy_mac(
+    dhcpcli_up_with_dynamic_ip, cleanup_ovs_bridge
+):
+    assert _poll(_has_ipv4_dhcp_gateway)
+    current_state = statelib.show_only((DHCP_CLI_NIC,))
+    cur_ipv4 = current_state[Interface.KEY][0][Interface.IPV4][
+        InterfaceIPv4.ADDRESS
+    ][0][InterfaceIPv4.ADDRESS_IP]
+
+    state = yaml.load(
+        """---
+        interfaces:
+        - name: ovs0
+          type: ovs-interface
+          state: up
+          copy-mac-from: dhcpcli
+          ipv4:
+            enabled: true
+            dhcp: true
+        - name: br0
+          type: ovs-bridge
+          state: up
+          bridge:
+            port:
+            - name: ovs0
+            - name: dhcpcli""",
+        Loader=yaml.SafeLoader,
+    )
+    libnmstate.apply(state)
+
+    assert _poll(_has_ipv4_dhcp_gateway, "ovs0")
+
+    new_state = statelib.show_only(("ovs0",))
+    new_ipv4 = new_state[Interface.KEY][0][Interface.IPV4][
+        InterfaceIPv4.ADDRESS
+    ][0][InterfaceIPv4.ADDRESS_IP]
+
+    assert cur_ipv4 == new_ipv4
