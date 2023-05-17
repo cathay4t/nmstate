@@ -79,7 +79,10 @@ RETRY_TIMEOUT = 30
 
 
 def iface_is_holding_expected_mac(iface_name, expected_mac):
-    return get_mac_address(iface_name) == expected_mac
+    cur_mac = get_mac_address(iface_name)
+    print(f"Current MAC {cur_mac}")
+    print(f"Desired MAC {expected_mac}")
+    return cur_mac == expected_mac
 
 
 @pytest.fixture
@@ -762,6 +765,9 @@ def test_new_bond_uses_mac_of_first_port_by_name(eth1_eth2_with_no_profile):
     bond regardless the order of port.
     """
     eth1_mac = get_mac_address(ETH1)
+    eth2_mac = get_mac_address(ETH2)
+    print("eth1 MAC", eth1_mac)
+    print("eth2 MAC", eth2_mac)
     with bond_interface(
         name=BOND99,
         port=[ETH2, ETH1],
