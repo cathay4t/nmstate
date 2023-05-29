@@ -15,6 +15,11 @@ pub(crate) fn format(state_file: &str) -> Result<String, CliError> {
     // Replace non-breaking space '\u{A0}'  to normal space
     let content = content.replace('\u{A0}', " ");
 
-    let state = NetworkState::new_from_yaml(&content)?;
-    Ok(serde_yaml::to_string(&state)?)
+    match NetworkState::new_from_yaml(&content) {
+        Err(e) => {
+            println!("HAHA cli error: {e}");
+            Err(e.to_string().into())
+        }
+        Ok(s) => Ok(serde_yaml::to_string(&s)?),
+    }
 }

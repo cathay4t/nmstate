@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use std::error::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -107,6 +109,15 @@ impl From<serde_json::Error> for NmstateError {
         NmstateError::new(
             ErrorKind::InvalidArgument,
             format!("Invalid propriety: {e}"),
+        )
+    }
+}
+
+impl From<serde_yaml::Error> for NmstateError {
+    fn from(e: serde_yaml::Error) -> Self {
+        NmstateError::new(
+            ErrorKind::InvalidArgument,
+            format!("Invalid YAML: {e}"),
         )
     }
 }

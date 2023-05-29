@@ -112,6 +112,7 @@ mod route_rule;
 mod serializer;
 mod state;
 mod unit_tests;
+mod yaml;
 
 pub(crate) use crate::dns::MergedDnsState;
 pub use crate::dns::{DnsClientState, DnsState};

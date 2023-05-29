@@ -299,10 +299,12 @@ impl NetworkState {
     pub fn new_from_yaml(net_state_yaml: &str) -> Result<Self, NmstateError> {
         match serde_yaml::from_str(net_state_yaml) {
             Ok(s) => Ok(s),
-            Err(e) => Err(NmstateError::new(
-                ErrorKind::InvalidArgument,
-                format!("Invalid YAML string: {e}"),
-            )),
+            Err(e) => {
+                Err(NmstateError::new(
+                    ErrorKind::InvalidArgument,
+                    format!("Invalid YAML string: {e}"),
+                ))
+            }
         }
     }
 

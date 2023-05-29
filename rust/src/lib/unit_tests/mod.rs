@@ -1,4 +1,6 @@
 #[cfg(test)]
+mod yaml;
+#[cfg(test)]
 mod base;
 #[cfg(test)]
 mod bond;

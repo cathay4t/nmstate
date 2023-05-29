@@ -322,92 +322,105 @@ impl<'de> Deserialize<'de> for Interface {
             }
             v = serde_json::value::Value::Object(new_value);
         }
+        let iface_name = v
+            .get("name")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let iface_type = v
+            .get("type")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown")
+            .to_string();
 
-        match Option::deserialize(&v["type"])
-            .map_err(serde::de::Error::custom)?
-        {
-            Some(InterfaceType::Ethernet) => {
-                let inner = EthernetInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Ethernet(inner))
-            }
-            Some(InterfaceType::LinuxBridge) => {
-                let inner = LinuxBridgeInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::LinuxBridge(inner))
-            }
-            Some(InterfaceType::Bond) => {
-                let inner = BondInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Bond(inner))
-            }
-            Some(InterfaceType::Veth) => {
-                let inner = EthernetInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Ethernet(inner))
-            }
-            Some(InterfaceType::Vlan) => {
-                let inner = VlanInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Vlan(inner))
-            }
-            Some(InterfaceType::Vxlan) => {
-                let inner = VxlanInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Vxlan(inner))
-            }
-            Some(InterfaceType::Dummy) => {
-                let inner = DummyInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Dummy(inner))
-            }
-            Some(InterfaceType::OvsInterface) => {
-                let inner = OvsInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::OvsInterface(inner))
-            }
-            Some(InterfaceType::OvsBridge) => {
-                let inner = OvsBridgeInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::OvsBridge(inner))
-            }
-            Some(InterfaceType::MacVlan) => {
-                let inner = MacVlanInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::MacVlan(inner))
-            }
-            Some(InterfaceType::MacVtap) => {
-                let inner = MacVtapInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::MacVtap(inner))
-            }
-            Some(InterfaceType::Vrf) => {
-                let inner = VrfInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Vrf(inner))
-            }
-            Some(InterfaceType::InfiniBand) => {
-                let inner = InfiniBandInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::InfiniBand(inner))
-            }
-            Some(InterfaceType::Loopback) => {
-                let inner = LoopbackInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Loopback(inner))
-            }
-            Some(iface_type) => {
-                log::warn!("Unsupported interface type {}", iface_type);
-                let inner = UnknownInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Unknown(inner))
-            }
-            None => {
-                let inner = UnknownInterface::deserialize(v)
-                    .map_err(serde::de::Error::custom)?;
-                Ok(Interface::Unknown(inner))
+        let result: Result<Self, D::Error> =
+            match Option::deserialize(&v["type"])
+                .map_err(serde::de::Error::custom)?
+            {
+                Some(InterfaceType::Ethernet) => {
+                    EthernetInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::Ethernet(i))
+                }
+                Some(InterfaceType::LinuxBridge) => {
+                    LinuxBridgeInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::LinuxBridge(i))
+                }
+                Some(InterfaceType::Bond) => BondInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Bond(i)),
+                Some(InterfaceType::Veth) => EthernetInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Ethernet(i)),
+                Some(InterfaceType::Vlan) => VlanInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Vlan(i)),
+                Some(InterfaceType::Vxlan) => VxlanInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Vxlan(i)),
+                Some(InterfaceType::Dummy) => DummyInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Dummy(i)),
+                Some(InterfaceType::OvsInterface) => {
+                    OvsInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::OvsInterface(i))
+                }
+                Some(InterfaceType::OvsBridge) => {
+                    OvsBridgeInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::OvsBridge(i))
+                }
+                Some(InterfaceType::MacVlan) => {
+                    MacVlanInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::MacVlan(i))
+                }
+                Some(InterfaceType::MacVtap) => {
+                    MacVtapInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::MacVtap(i))
+                }
+                Some(InterfaceType::Vrf) => VrfInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Vrf(i)),
+                Some(InterfaceType::InfiniBand) => {
+                    InfiniBandInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::InfiniBand(i))
+                }
+                Some(InterfaceType::Loopback) => {
+                    LoopbackInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::Loopback(i))
+                }
+                Some(iface_type) => {
+                    log::warn!("Unsupported interface type {}", iface_type);
+                    UnknownInterface::deserialize(v)
+                        .map_err(serde::de::Error::custom)
+                        .map(|i| Interface::Unknown(i))
+                }
+                None => UnknownInterface::deserialize(v)
+                    .map_err(serde::de::Error::custom)
+                    .map(|i| Interface::Unknown(i)),
+            };
+        if let Err(e) = &result {
+            if !iface_name.is_empty() {
+                let err_msg = e.to_string();
+                // Since serde does not provide structured error, we will have
+                // to parse the error string as hack.
+                if let Some(field) = err_msg
+                    .strip_prefix("unknown field `")
+                    .and_then(|f| f.strip_suffix("`"))
+                {
+                    return Err(serde::de::Error::custom(format!(
+                        "unknown_field: interface.{iface_type}.{iface_name}.{field}"
+                    )));
+                }
             }
         }
+        result
     }
 }
 
