@@ -83,7 +83,7 @@ fn apply_bond_options(
             .options
             .insert("ad_user_port_key".to_string(), v.to_string());
     }
-    if let Some(v) = bond_opts.all_slaves_active.as_ref() {
+    if let Some(v) = bond_opts.all_ports_active.as_ref() {
         nm_bond_set
             .options
             .insert("all_slaves_active".to_string(), u8::from(*v).to_string());
@@ -153,7 +153,7 @@ fn apply_bond_options(
             .options
             .insert("num_unsol_na".to_string(), v.to_string());
     }
-    if let Some(v) = bond_opts.packets_per_slave.as_ref() {
+    if let Some(v) = bond_opts.packets_per_port.as_ref() {
         nm_bond_set
             .options
             .insert("packets_per_slave".to_string(), v.to_string());

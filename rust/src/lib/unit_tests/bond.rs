@@ -218,7 +218,7 @@ link-aggregation:
     ad_actor_sys_prio: "555"
     ad_select: "1"
     ad_user_port_key: "16"
-    all_slaves_active: "1"
+    all_ports_active: "1"
     arp_interval: "100"
     arp_validate: "1"
     downdelay: "50"
@@ -229,7 +229,7 @@ link-aggregation:
     min_links: "2"
     num_grat_arp: "3"
     num_unsol_na: "4"
-    packets_per_slave: "1000"
+    packets_per_port: "1000"
     primary_reselect: "1"
     resend_igmp: "103"
     tlb_dynamic_lb: "true"
@@ -243,7 +243,7 @@ link-aggregation:
     assert_eq!(bond_opts.ad_select, Some(BondAdSelect::Bandwidth));
     assert_eq!(bond_opts.ad_user_port_key, Some(16));
     assert_eq!(
-        bond_opts.all_slaves_active,
+        bond_opts.all_ports_active,
         Some(BondAllPortsActive::Delivered)
     );
     assert_eq!(bond_opts.arp_interval, Some(100));
@@ -256,7 +256,7 @@ link-aggregation:
     assert_eq!(bond_opts.min_links, Some(2));
     assert_eq!(bond_opts.num_grat_arp, Some(3));
     assert_eq!(bond_opts.num_unsol_na, Some(4));
-    assert_eq!(bond_opts.packets_per_slave, Some(1000));
+    assert_eq!(bond_opts.packets_per_port, Some(1000));
     assert_eq!(
         bond_opts.primary_reselect,
         Some(BondPrimaryReselect::Better)
@@ -385,7 +385,7 @@ fn test_integer_bond_opts() {
     options:
       ad_select: 0
       lacp_rate: 1
-      all_slaves_active: 1
+      all_ports_active: 1
       arp_all_targets: 0
       arp_validate: 6
       fail_over_mac: 2
@@ -405,7 +405,7 @@ fn test_integer_bond_opts() {
         assert_eq!(bond_opts.ad_select.unwrap(), BondAdSelect::Stable);
         assert_eq!(bond_opts.lacp_rate.unwrap(), BondLacpRate::Fast);
         assert_eq!(
-            bond_opts.all_slaves_active.unwrap(),
+            bond_opts.all_ports_active.unwrap(),
             BondAllPortsActive::Delivered
         );
         assert_eq!(bond_opts.arp_all_targets.unwrap(), BondArpAllTargets::Any);
@@ -597,4 +597,40 @@ fn test_disable_balance_slb_valid_override_current() {
     let mut merged_iface =
         MergedInterface::new(Some(des_iface), Some(cur_iface)).unwrap();
     merged_iface.post_inter_ifaces_process_bond().unwrap();
+}
+
+#[test]
+fn test_deprecated_bond_options() {
+    let des_iface: Interface = serde_yaml::from_str(
+        r#"---
+        name: bond99
+        type: bond
+        state: up
+        link-aggregation:
+          ports:
+          - eth1
+          - eth2
+          options:
+            all_ports_active: "1"
+            packets_per_slave: 100
+        "#,
+    )
+    .unwrap();
+    if let Interface::Bond(bond_iface) = des_iface {
+        let bond_opts = bond_iface
+            .bond
+            .as_ref()
+            .unwrap()
+            .options
+            .as_ref()
+            .unwrap()
+            .clone();
+        assert_eq!(
+            bond_opts.all_ports_active.unwrap(),
+            BondAllPortsActive::Delivered,
+        );
+        assert_eq!(bond_opts.packets_per_port.unwrap(), 100);
+    } else {
+        panic!("Failed to find bond interface")
+    }
 }

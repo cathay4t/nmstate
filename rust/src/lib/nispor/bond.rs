@@ -57,7 +57,7 @@ fn np_bond_options_to_nmstate(np_iface: &nispor::Iface) -> BondOptions {
             }
         });
         options.ad_user_port_key = np_bond.ad_user_port_key;
-        options.all_slaves_active = np_bond
+        options.all_ports_active = np_bond
             .all_subordinates_active
             .as_ref()
             .and_then(|r| match r {
@@ -136,7 +136,7 @@ fn np_bond_options_to_nmstate(np_iface: &nispor::Iface) -> BondOptions {
         options.min_links = np_bond.min_links;
         options.num_grat_arp = np_bond.num_grat_arp;
         options.num_unsol_na = np_bond.num_unsol_na;
-        options.packets_per_slave = np_bond.packets_per_subordinate;
+        options.packets_per_port = np_bond.packets_per_subordinate;
         options.primary = np_bond.primary.clone();
         options.primary_reselect =
             np_bond.primary_reselect.as_ref().and_then(|r| match r {

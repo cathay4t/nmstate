@@ -33,7 +33,7 @@ use crate::{
 ///   link-aggregation:
 ///     mode: balance-rr
 ///     options:
-///       all_slaves_active: dropped
+///       all_ports_active: dropped
 ///       arp_all_targets: any
 ///       arp_interval: 0
 ///       arp_validate: none
@@ -41,7 +41,7 @@ use crate::{
 ///       lp_interval: 1
 ///       miimon: 100
 ///       min_links: 0
-///       packets_per_slave: 1
+///       packets_per_port: 1
 ///       primary_reselect: always
 ///       resend_igmp: 1
 ///       updelay: 0
@@ -478,7 +478,7 @@ impl std::fmt::Display for BondLacpRate {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "kebab-case", try_from = "NumberAsString")]
 #[non_exhaustive]
-/// Equal to kernel `all_slaves_active` option.
+/// Equal to kernel `all_ports_active` option.
 /// Specifies that duplicate frames (received on inactive ports) should be
 /// dropped (0) or delivered (1).
 pub enum BondAllPortsActive {
@@ -501,7 +501,7 @@ impl TryFrom<NumberAsString> for BondAllPortsActive {
             v => Err(NmstateError::new(
                 ErrorKind::InvalidArgument,
                 format!(
-                    "Invalid all_slaves_active value: {v}, should be \
+                    "Invalid all_ports_active value: {v}, should be \
                     0, dropped, 1 or delivered"
                 ),
             )),
@@ -907,14 +907,17 @@ pub struct BondOptions {
     ///
     /// This parameter has effect only in 802.3ad mode.
     pub ad_user_port_key: Option<u16>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        alias = "all_slaves_active"
+    )]
     /// Specifies that duplicate frames (received on inactive ports) should be
     /// dropped (0) or delivered (1).
     ///
     /// Normally, bonding will drop duplicate frames (received on inactive
     /// ports), which is desirable for most users. But there are some times it
     /// is nice to allow duplicate frames to be delivered.
-    pub all_slaves_active: Option<BondAllPortsActive>,
+    pub all_ports_active: Option<BondAllPortsActive>,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// Specifies the quantity of arp_ip_targets that must be reachable in
     /// order for the ARP monitor to consider a port as being up. This
@@ -988,7 +991,7 @@ pub struct BondOptions {
         deserialize_with = "crate::deserializer::option_u32_or_string"
     )]
     /// Specifies the number of seconds between instances where the bonding
-    /// driver sends learning packets to each slaves peer switch.
+    /// driver sends learning packets to each ports peer switch.
     ///
     /// The valid range is 1 - 0x7fffffff; the default value is 1. This Option
     /// has effect only in balance-tlb and balance-alb modes.
@@ -1057,20 +1060,21 @@ pub struct BondOptions {
     #[serde(
         skip_serializing_if = "Option::is_none",
         default,
-        deserialize_with = "crate::deserializer::option_u32_or_string"
+        deserialize_with = "crate::deserializer::option_u32_or_string",
+        alias = "packets_per_slave"
     )]
     /// Specify the number of packets to transmit through a port before moving
     /// to the next one. When set to 0 then a port is chosen at random.
     ///
     /// The valid range is 0 - 65535; the default value is 1. This option has
     /// effect only in balance-rr mode.
-    pub packets_per_slave: Option<u32>,
+    pub packets_per_port: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    /// A string (eth0, eth2, etc) specifying which slave is the primary
-    /// device. The specified device will always be the active slave while
+    /// A string (eth0, eth2, etc) specifying which port is the primary
+    /// device. The specified device will always be the active port while
     /// it is available. Only when the primary is off-line will alternate
-    /// devices be used. This is useful when one slave is preferred over
-    /// another, e.g., when one slave has higher throughput than another.
+    /// devices be used. This is useful when one port is preferred over
+    /// another, e.g., when one port has higher throughput than another.
     ///
     /// The primary option is only valid for active-backup(1), balance-tlb (5)
     /// and balance-alb (6) mode.
@@ -1160,7 +1164,7 @@ pub struct BondOptions {
     /// value is 1.
     pub use_carrier: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    /// Selects the transmit hash policy to use for slave selection in
+    /// Selects the transmit hash policy to use for port selection in
     /// balance-xor, 802.3ad, and tlb modes.
     pub xmit_hash_policy: Option<BondXmitHashPolicy>,
     #[serde(
