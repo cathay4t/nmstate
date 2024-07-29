@@ -116,7 +116,6 @@ pub(crate) fn perpare_nm_conns(
 
 // When a new virtual interface is desired, if its controller is also newly
 // created, in NetworkManager, there is no need to activate the subordinates.
-// For OVS stuff, always return false.
 fn can_skip_activation(
     merged_iface: &MergedInterface,
     merged_ifaces: &MergedInterfaces,
@@ -160,16 +159,12 @@ fn can_skip_activation(
     if merged_iface.current.is_none()
         && merged_iface.for_apply.is_some()
         && merged_iface.merged.is_up()
-        && merged_iface.merged.iface_type() != InterfaceType::OvsInterface
     {
         if let Some(desired_iface) = merged_iface.for_apply.as_ref() {
             if let (Some(ctrl_iface), Some(ctrl_type)) = (
                 desired_iface.base_iface().controller.as_deref(),
                 desired_iface.base_iface().controller_type.as_ref(),
             ) {
-                if ctrl_type == &InterfaceType::OvsBridge {
-                    return false;
-                }
                 if let Some(merged_ctrl_iface) =
                     merged_ifaces.get_iface(ctrl_iface, ctrl_type.clone())
                 {
@@ -186,6 +181,11 @@ fn can_skip_activation(
                         return true;
                     }
                 }
+            }
+
+            // new OVS port on new OVS bridge can skip activation
+            if nm_conn.iface_type() == Some("ovs-port") {
+                return true;
             }
         }
     }
