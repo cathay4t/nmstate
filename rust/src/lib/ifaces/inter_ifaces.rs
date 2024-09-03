@@ -654,6 +654,14 @@ impl MergedInterfaces {
             MergedInterface,
         > = HashMap::new();
 
+        for iface in desired
+            .kernel_ifaces
+            .values_mut()
+            .chain(desired.user_ifaces.values_mut())
+        {
+            iface.post_deserialize_cleanup();
+        }
+
         desired.unify_veth_and_eth();
         current.unify_veth_and_eth();
 
