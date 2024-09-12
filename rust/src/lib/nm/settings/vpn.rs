@@ -11,6 +11,10 @@ pub(crate) fn gen_nm_ipsec_vpn_setting(
 ) {
     if let Some(conf) = iface.libreswan.as_ref() {
         let mut vpn_data: HashMap<String, String> = HashMap::new();
+        // Instruct NetworkManager-libreswan do not add NM specific default 
+        // values
+        vpn_data.insert("nm-auto-defaults".into(), "no".into());
+
         vpn_data.insert("right".into(), conf.right.to_string());
         if let Some(v) = conf.rightid.as_deref() {
             vpn_data.insert("rightid".into(), v.to_string());
@@ -90,7 +94,6 @@ pub(crate) fn gen_nm_ipsec_vpn_setting(
         }
 
         let mut nm_vpn_set = NmSettingVpn::default();
-        nm_vpn_set.data = Some(vpn_data);
         nm_vpn_set.service_type =
             Some(NmSettingVpn::SERVICE_TYPE_LIBRESWAN.to_string());
         if let Some(v) = conf.psk.as_deref() {
@@ -101,12 +104,16 @@ pub(crate) fn gen_nm_ipsec_vpn_setting(
                     .and_then(|c| c.secrets.as_ref())
                     .cloned();
             } else {
+                if !vpn_data.contains_key("authby") {
+                    vpn_data.insert("authby".into(), "secret".into());
+                }
                 nm_vpn_set
                     .secrets
                     .get_or_insert(HashMap::new())
                     .insert("pskvalue".to_string(), v.to_string());
             }
         }
+        nm_vpn_set.data = Some(vpn_data);
         nm_conn.vpn = Some(nm_vpn_set);
     }
 }

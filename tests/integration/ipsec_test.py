@@ -883,3 +883,41 @@ def test_ipsec_ipv6_host_to_site_with_dhcpv6_off(
     iface_state = show_only(["ipsec97"])[Interface.KEY][0]
     assert not iface_state[Interface.IPV6].get(InterfaceIPv6.DHCP)
     assert not iface_state[Interface.IPV6].get(InterfaceIPv6.AUTOCONF)
+
+
+@pytest.mark.xfail(
+    nm_libreswan_version_int() < version_str_to_int("1.2.23"),
+    reason="Need NetworkManager-libreswan 1.2.23+ to support "
+    "auto-defaults:no option",
+)
+def test_ipsec_ipv4_libreswan_no_auto_defaults(
+    ipsec_hosta_conn_cleanup,
+):
+    desired_state = yaml.load(
+        f"""---
+        interfaces:
+        - name: hosta_conn
+          type: ipsec
+          libreswan:
+            left: {IpsecTestEnv.HOSTA_IPV4_CRT_P2P}
+            leftid: 'hosta.example.org'
+            leftcert: hosta.example.org
+            right: {IpsecTestEnv.HOSTB_IPV4_CRT_P2P}
+            rightid: 'hostb.example.org'
+            rightsubnet: {IpsecTestEnv.HOSTB_IPV4_CRT_P2P}/32
+            ikev2: insist""",
+        Loader=yaml.SafeLoader,
+    )
+    libnmstate.apply(desired_state)
+    assert retry_till_true_or_timeout(
+        RETRY_COUNT,
+        _check_ipsec,
+        IpsecTestEnv.HOSTA_IPV4_CRT_P2P,
+        IpsecTestEnv.HOSTB_IPV4_CRT_P2P,
+    )
+    assert retry_till_true_or_timeout(
+        RETRY_COUNT,
+        _check_ipsec_policy,
+        f"{IpsecTestEnv.HOSTA_IPV4_CRT_P2P}/32",
+        f"{IpsecTestEnv.HOSTB_IPV4_CRT_P2P}/32",
+    )
