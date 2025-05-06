@@ -653,4 +653,41 @@ impl Interfaces {
             }
         }
     }
+
+    // Automatically convert ignored interface to `state: up` when all below
+    // conditions met:
+    //  1. Desire state has interface holding `controller` property.
+    //  2. This controller not mentioned in desire state.
+    //  3. This controller is not up in current state.
+    //  4. Controller is kernel interface. (We cannot convert ignored OVS bridge
+    //     to managed).
+    pub(crate) fn auto_managed_controller(&mut self, current: &Self) {
+        let mut pending_changes: Vec<Interface> = Vec::new();
+        for iface in self.kernel_ifaces.values().filter(|i| {
+            i.is_up()
+                && i.base_iface()
+                    .controller
+                    .as_deref()
+                    .map(|ctrl_name| {
+                        !self.kernel_ifaces.contains_key(ctrl_name)
+                    })
+                    .unwrap_or_default()
+        }) {
+            if let Some(cur_ctrl_iface) = iface
+                .base_iface()
+                .controller
+                .as_deref()
+                .and_then(|ctrl_name| current.kernel_ifaces.get(ctrl_name))
+            {
+                if !cur_ctrl_iface.is_up() {
+                    let mut new_iface = cur_ctrl_iface.clone_name_type_only();
+                    new_iface.base_iface_mut().state = InterfaceState::Up;
+                    pending_changes.push(new_iface);
+                }
+            }
+        }
+        for new_iface in pending_changes {
+            self.push(new_iface);
+        }
+    }
 }

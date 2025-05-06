@@ -692,6 +692,7 @@ impl MergedInterfaces {
         }
 
         desired.auto_managed_controller_ports(&current);
+        desired.auto_managed_controller(&current);
 
         let ignored_ifaces = get_ignored_ifaces(&desired, &current);
         desired.pre_ignore_check(&current, ignored_ifaces.as_slice())?;
