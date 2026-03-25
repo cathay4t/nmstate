@@ -8,13 +8,14 @@ use super::{
 };
 use crate::{
     AddressFamily, Dhcpv4ClientId, Dhcpv6Duid, InterfaceIpv4, InterfaceIpv6,
-    Ipv6AddrGenMode, RouteRuleAction, RouteRuleEntry, WaitIp,
+    Ipv6AddrGenMode, RouteEntry, RouteRuleAction, RouteRuleEntry, WaitIp,
 };
 
 const ADDR_GEN_MODE_EUI64: i32 = 0;
 const ADDR_GEN_MODE_STABLE_PRIVACY: i32 = 1;
 const ADDR_GEN_MODE_STABLE_DEFAULT_OR_EUI64: i32 = 2;
 const ADDR_GEN_MODE_STABLE_DEFAULT: i32 = 3;
+const NM_USE_DEFAULT_METRIC: i64 = -1;
 
 pub(crate) fn nm_ip_setting_to_nmstate4(
     nm_ip_setting: &NmSettingIp,
@@ -54,7 +55,9 @@ pub(crate) fn nm_ip_setting_to_nmstate4(
             } else {
                 None
             },
-            auto_route_metric: nm_ip_setting.route_metric.map(|i| i as u32),
+            auto_route_metric: nm_ip_setting
+                .route_metric
+                .map(nm_route_metric_to_nmstate),
             dhcp_send_hostname: if enabled && dhcp == Some(true) {
                 Some(dhcp_send_hostname)
             } else {
@@ -72,6 +75,9 @@ pub(crate) fn nm_ip_setting_to_nmstate4(
             } else {
                 None
             },
+            prefix_route_metric: nm_ip_setting
+                .route_metric
+                .map(nm_route_metric_to_nmstate),
             ..Default::default()
         }
     } else {
@@ -123,7 +129,9 @@ pub(crate) fn nm_ip_setting_to_nmstate6(
                     None
                 }
             },
-            auto_route_metric: nm_ip_setting.route_metric.map(|i| i as u32),
+            auto_route_metric: nm_ip_setting
+                .route_metric
+                .map(nm_route_metric_to_nmstate),
             dhcp_send_hostname: if enabled && dhcp == Some(true) {
                 Some(nm_ip_setting.dhcp_send_hostname.unwrap_or(true))
             } else {
@@ -308,4 +316,20 @@ fn nm_rules_to_nmstate(
         ret.insert(rule);
     }
     Some(ret)
+}
+
+fn nm_route_metric_to_nmstate(nm_metric: i64) -> i64 {
+    if nm_metric == NM_USE_DEFAULT_METRIC {
+        RouteEntry::USE_DEFAULT_METRIC
+    } else {
+        nm_metric
+    }
+}
+
+pub(crate) fn nmstate_route_metric_to_nm(metric: i64) -> i64 {
+    if metric == RouteEntry::USE_DEFAULT_METRIC {
+        NM_USE_DEFAULT_METRIC
+    } else {
+        metric
+    }
 }

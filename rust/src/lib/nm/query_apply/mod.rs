@@ -33,7 +33,7 @@ pub(crate) use self::{
     ieee8021x::nm_802_1x_to_nmstate,
     ip::{
         nm_ip_setting_to_nmstate4, nm_ip_setting_to_nmstate6,
-        query_nmstate_wait_ip,
+        nmstate_route_metric_to_nm, query_nmstate_wait_ip,
     },
     ip_tunnel::is_ip_tunnel_changed,
     ipvlan::is_ipvlan_changed,
